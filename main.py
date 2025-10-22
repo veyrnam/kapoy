@@ -34,11 +34,11 @@ class VerifyModal(discord.ui.Modal, title="Enter Verification Key"):
             role = interaction.guild.get_role(ROLE_ID)
             if role:
                 await interaction.user.add_roles(role)
-                await interaction.response.send_message("Verified! ✅", ephemeral=True)
+                await interaction.response.send_message("verified naka wow", ephemeral=True)
             else:
                 await interaction.response.send_message("Role not found.", ephemeral=True)
         else:
-            await interaction.response.send_message("Wrong key! ❌", ephemeral=True)
+            await interaction.response.send_message("di mao ang key!", ephemeral=True)
 
 # Button for verification
 class VerifyButton(discord.ui.View):
@@ -55,7 +55,7 @@ async def setup(ctx):
 
     embed = discord.Embed(
         title="Verification",
-        description="Click the Verify button to verify. You will need a key for it.",
+        description="e click ang Verify button to verify. You will need a key for it.",
         color=discord.Color.blurple()
     )
     await ctx.send(embed=embed, view=VerifyButton())
@@ -76,4 +76,5 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
 
 # Run bot
+
 bot.run(DISCORD_TOKEN)
