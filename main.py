@@ -70,7 +70,7 @@ async def on_reaction_add(reaction, user):
 
         # DM the user to send key
         try:
-            await user.send("Send your key here if you're ready. Use `!verify <your_key>` in the server.")
+            await user.send("Send your key here if you're ready. Use `!verify <your_key>`.")
         except discord.Forbidden:
             # If DMs blocked, send in the server channel
             channel = bot.get_channel(verification_channel_id)
@@ -78,17 +78,29 @@ async def on_reaction_add(reaction, user):
                 await channel.send(f"{user.mention}, send your key here if you're ready using `!verify <key>`.")
 
 # ========================
-# Verify command
+# Verify command (works in DMs or server)
 # ========================
-@bot.command(name="verify")  # Keep command name !verify
+@bot.command(name="verify")
 async def verify_command(ctx, *, key: str):
+    guild = ctx.guild or bot.get_guild(GUILD_ID)
+    if guild is None:
+        await ctx.reply("Cannot find the server. Contact an admin.", delete_after=10)
+        return
+
+    member = guild.get_member(ctx.author.id)
+    if member is None:
+        await ctx.reply("Cannot find you in the server. Make sure you are a member.", delete_after=10)
+        return
+
+    role = guild.get_role(ROLE_ID)
+    if role is None:
+        await ctx.reply("Role not found. Contact an admin.", delete_after=10)
+        return
+
+    # Check key
     if key.strip().lower() == CORRECT_KEY.lower():
-        role = ctx.guild.get_role(ROLE_ID)
-        if role:
-            await ctx.author.add_roles(role)
-            await ctx.reply("Verified! ✅", delete_after=10)
-        else:
-            await ctx.reply("Role not found.", delete_after=10)
+        await member.add_roles(role)
+        await ctx.reply("Verified! ✅", delete_after=10)
     else:
         await ctx.reply("Wrong key! DM/PM jal for the key", delete_after=10)
 
