@@ -45,14 +45,23 @@ class VerifyModal(discord.ui.Modal, title="Enter Verification Key"):
         else:
             await interaction.response.send_message("di mao ang key!", ephemeral=True)
 
-# Button for verification
-class VerifyButton(discord.ui.View):
+# Dropdown (select menu) for verification
+class VerifyDropdown(discord.ui.Select):
     def __init__(self):
-        super().__init__(timeout=None)  # never expire
+        options = [
+            discord.SelectOption(label="Click to Verify", description="Open the verification modal")
+        ]
+        super().__init__(placeholder="Select to verify...", options=options)
 
-    @discord.ui.button(label="Verify", style=discord.ButtonStyle.green)
-    async def verify_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def callback(self, interaction: discord.Interaction):
+        # Open the verification modal when the user selects the option
         await interaction.response.send_modal(VerifyModal())
+
+# View containing the dropdown
+class VerifyView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(VerifyDropdown())
 
 # Setup command
 @bot.command()
@@ -65,11 +74,11 @@ async def setup(ctx):
 
     embed = discord.Embed(
         title="Verification",
-        description="e click ang Verify button to verify. You will need a key for it.",
+        description="Use the dropdown below to verify. You will need a key.",
         color=discord.Color.blurple()
     )
     verification_channel_id = ctx.channel.id
-    verification_message = await ctx.send(embed=embed, view=VerifyButton())
+    verification_message = await ctx.send(embed=embed, view=VerifyView())
 
     try:
         await ctx.message.delete()
@@ -89,10 +98,10 @@ async def refresh_verification_message():
                 pass  # ignore if can't delete
             embed = discord.Embed(
                 title="Verification",
-                description="e click ang Verify button to verify. You will need a key for it.",
+                description="Use the dropdown below to verify. You will need a key.",
                 color=discord.Color.blurple()
             )
-            verification_message = await channel.send(embed=embed, view=VerifyButton())
+            verification_message = await channel.send(embed=embed, view=VerifyView())
 
 # On ready event
 @bot.event
