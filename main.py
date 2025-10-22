@@ -75,12 +75,13 @@ async def on_reaction_add(reaction, user):
 
 # Command to verify key
 @bot.command()
+@bot.command()
 async def verify(ctx, *, key: str):
-    if key.strip() == CORRECT_KEY:
+    if key.strip().lower() == CORRECT_KEY.lower():
         role = ctx.guild.get_role(ROLE_ID)
         if role:
             await ctx.author.add_roles(role)
-            await ctx.reply("Verified!", delete_after=10)
+            await ctx.reply("Verified! ✅", delete_after=10)
         else:
             await ctx.reply("Role not found.", delete_after=10)
     else:
@@ -97,4 +98,5 @@ async def on_ready():
     print(f"Logged in as {bot.user}")
 
 bot.run(DISCORD_TOKEN)
+
 
