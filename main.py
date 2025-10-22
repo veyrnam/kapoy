@@ -1,7 +1,8 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import os
 import webserver  # Make sure this is in the same folder
+import asyncio
 
 # ==== CONFIGURATION ====
 DISCORD_TOKEN = os.environ['discordkey']  # Your environment variable on Render
@@ -20,6 +21,10 @@ intents.guilds = True
 intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# Store the last verification message to refresh it
+verification_message = None
+verification_channel_id = None  # Will store the channel ID where setup was used
 
 # Modal for key input
 class VerifyModal(discord.ui.Modal, title="Enter Verification Key"):
@@ -52,6 +57,8 @@ class VerifyButton(discord.ui.View):
 # Setup command
 @bot.command()
 async def setup(ctx):
+    global verification_message, verification_channel_id
+
     if ctx.author.id != OWNER_ID:
         await ctx.reply("You are not allowed to use this command.", delete_after=5)
         return
@@ -61,12 +68,31 @@ async def setup(ctx):
         description="e click ang Verify button to verify. You will need a key for it.",
         color=discord.Color.blurple()
     )
-    await ctx.send(embed=embed, view=VerifyButton())
+    verification_channel_id = ctx.channel.id
+    verification_message = await ctx.send(embed=embed, view=VerifyButton())
 
     try:
         await ctx.message.delete()
     except discord.Forbidden:
         print("Bot missing permissions to delete messages.")
+
+# Task to refresh the verification message every 15 minutes
+@tasks.loop(minutes=15)
+async def refresh_verification_message():
+    global verification_message, verification_channel_id
+    if verification_message and verification_channel_id:
+        channel = bot.get_channel(verification_channel_id)
+        if channel:
+            try:
+                await verification_message.delete()
+            except discord.Forbidden:
+                pass  # ignore if can't delete
+            embed = discord.Embed(
+                title="Verification",
+                description="e click ang Verify button to verify. You will need a key for it.",
+                color=discord.Color.blurple()
+            )
+            verification_message = await channel.send(embed=embed, view=VerifyButton())
 
 # On ready event
 @bot.event
@@ -77,8 +103,7 @@ async def on_ready():
     )
     await bot.change_presence(status=discord.Status.online, activity=stream)
     print(f"Logged in as {bot.user}")
+    refresh_verification_message.start()  # start the auto-refresh task
 
 # Run bot
-
 bot.run(DISCORD_TOKEN)
-
